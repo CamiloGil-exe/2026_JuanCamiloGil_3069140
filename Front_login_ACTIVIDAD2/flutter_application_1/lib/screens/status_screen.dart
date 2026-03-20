@@ -10,55 +10,66 @@ class StatusScreen extends StatefulWidget {
 }
 
 class _StatusScreenState extends State<StatusScreen> {
-      void createStatus() async {
-        if (statusController.text.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Escribe un estado primero')),
-          );
-          return;
-        }
-        setState(() => isLoading = true);
-        // Aquí deberías tener un método en ApiService para actualizar el estado
-        // Suponiendo que sea un endpoint tipo POST o PUT
-        // Ejemplo:
-        final response = await api.getUserStatus(widget.userId); // Cambia esto por el método correcto
-        // Si tienes un método como api.updateUserStatus(userId, status), úsalo
-        setState(() => isLoading = false);
-        if (response != null) {
-          setState(() => statusText = statusController.text);
-          statusController.clear();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Estado actualizado')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No se pudo actualizar el estado')),
-          );
-        }
-      }
-    @override
-    void dispose() {
-      statusController.dispose();
-      super.dispose();
+  void createStatus() async {
+    if (api.token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Token inválido. Vuelve a iniciar sesión.'),
+        ),
+      );
+      return;
     }
-  final TextEditingController statusController = TextEditingController();
-  final ApiService api = ApiService();
-  String statusText = '';
-  bool isLoading = false;
 
-  void fetchStatus() async {
+    final name = statusNameController.text.trim();
+    final description = statusDescriptionController.text.trim();
+
+    if (name.isEmpty || description.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Debe ingresar nombre y descripción')),
+      );
+      return;
+    }
+
     setState(() => isLoading = true);
-    final res = await api.getUserStatus(widget.userId);
+    final success = await api.createUserStatus(
+      widget.userId,
+      name,
+      description,
+    );
     setState(() => isLoading = false);
-    if (res != null && res['status'] != null) {
-      setState(() => statusText = res['status'].toString());
+
+    if (success) {
+      setState(() => statusText = '$name: $description');
+      statusNameController.clear();
+      statusDescriptionController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Estado guardado correctamente')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo guardar el estado')),
+      );
     }
   }
 
   @override
+  void dispose() {
+    statusNameController.dispose();
+    statusDescriptionController.dispose();
+    super.dispose();
+  }
+
+  final TextEditingController statusNameController = TextEditingController();
+  final TextEditingController statusDescriptionController =
+      TextEditingController();
+  final ApiService api = ApiService();
+  String statusText = '';
+  bool isLoading = false;
+
+  @override
   void initState() {
     super.initState();
-    fetchStatus();
+    // No se usan GET en esta pantalla: solo creación POST.
   }
 
   @override
@@ -94,16 +105,33 @@ class _StatusScreenState extends State<StatusScreen> {
                     )
                   : Text(
                       statusText,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
             ),
             const SizedBox(height: 32),
             TextField(
-              controller: statusController,
+              controller: statusNameController,
               decoration: InputDecoration(
-                labelText: 'Escribe tu nuevo estado',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: const Icon(Icons.edit),
+                labelText: 'Nombre del estado',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon: const Icon(Icons.label),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: statusDescriptionController,
+              maxLines: 2,
+              decoration: InputDecoration(
+                labelText: 'Descripción del estado',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon: const Icon(Icons.description),
               ),
             ),
             const SizedBox(height: 16),
@@ -114,11 +142,16 @@ class _StatusScreenState extends State<StatusScreen> {
                     child: ElevatedButton(
                       onPressed: createStatus,
                       style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       child: const Padding(
                         padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Text('Actualizar Estado', style: TextStyle(fontSize: 18)),
+                        child: Text(
+                          'Crear Estado',
+                          style: TextStyle(fontSize: 18),
+                        ),
                       ),
                     ),
                   ),
