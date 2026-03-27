@@ -37,6 +37,8 @@ DB_PORT=3306
 Ejecuta el servidor:
 npm run dev
 
+EN CASO DE ERROR CORRER: npm audit fix --force
+
 El backend correrá en:
 👉 http://localhost:3000
 
