@@ -21,6 +21,8 @@ El backend se encuentra en la ruta:
 
 Projects_back/api_basic
 Pasos:
+-Crear una base de datos en host local con el nombre de: api-crud
+-Ingresar los datos a la base de datos que estan en la ruta: api_basic/db/api-crud.sql
 Abre una terminal y navega a la carpeta:
 cd Projects_back/api_basic
 Instala las dependencias:
